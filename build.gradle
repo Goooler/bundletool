@@ -3,12 +3,10 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 buildscript {
     repositories {
         mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
+        gradlePluginPortal()
     }
     dependencies {
-        classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.13"
+        classpath "com.google.protobuf:protobuf-gradle-plugin:0.9.4"
         classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.6"
     }
 }
@@ -102,7 +100,7 @@ if (JavaVersion.current() != JavaVersion.VERSION_1_8) {
     compileJava.options.release = 8;
 }
 
-test {
+tasks.named('test', Test) {
     if (osName.contains("linux")) {
         environment "AAPT2_PATH", "build/resources/main/linux/aapt2"
     }
@@ -121,7 +119,7 @@ test {
 
     reports {
         html {
-            enabled false
+            enabled = false
         }
     }
 }
@@ -168,9 +166,9 @@ publishing {
     repositories {
         maven {
             def localRepo = project.hasProperty('localRepo') ?
-                    project.localRepo : "$buildDir/repo"
+                    project.localRepo : layout.buildDirectory.dir('repo').get().asFile
 
-            url = "file://$localRepo"
+            url = localRepo.toURI().toURL()
         }
     }
 }
@@ -232,7 +230,7 @@ tasks.register('executableJar', ShadowJar) {
 }
 
 // Unzip the aapt2 dependency jar.
-task unzipAapt2Jar(type: Copy) {
+def unzipAapt2Jar = tasks.register('unzipAapt2Jar', Copy) {
     if (osName.contains("linux")) {
         from zipTree(project.configurations.implementationLinux.singleFile)
         into('build/resources/main/linux')
@@ -249,8 +247,14 @@ task unzipAapt2Jar(type: Copy) {
     }
 }
 
-task uploadShadow {
-    dependsOn ':publishShadowPublicationToMavenRepository'
+tasks.register('uploadShadow') {
+    dependsOn tasks.named(':publishShadowPublicationToMavenRepository')
 }
 
-compileTestJava.dependsOn(unzipAapt2Jar)
+tasks.named('jar', Jar) {
+    dependsOn(unzipAapt2Jar)
+}
+
+tasks.named('compileTestJava') {
+    dependsOn(unzipAapt2Jar)
+}
