@@ -117,11 +117,7 @@ tasks.named('test', Test) {
         showStandardStreams = true
     }
 
-    reports {
-        html {
-            enabled = false
-        }
-    }
+    enabled = false
 }
 
 protobuf {
