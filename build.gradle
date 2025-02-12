@@ -9,11 +9,11 @@ buildscript {
     }
     dependencies {
         classpath "com.google.protobuf:protobuf-gradle-plugin:0.8.13"
-        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.1"
+        classpath "com.gradleup.shadow:shadow-gradle-plugin:8.3.6"
     }
 }
 
-apply plugin: "com.github.johnrengelman.shadow"
+apply plugin: "com.gradleup.shadow"
 apply plugin: "com.google.protobuf"
 apply plugin: "java"
 apply plugin: "maven-publish"
@@ -135,7 +135,7 @@ protobuf {
 publishing {
     publications {
         shadow(MavenPublication) { publication ->
-            project.shadow.component(publication)
+            from components.shadow
 
             groupId = 'com.android.tools.build'
             artifactId = 'bundletool'
@@ -176,7 +176,7 @@ publishing {
 }
 
 // Artifact released to Maven.
-shadowJar {
+tasks.named('shadowJar', ShadowJar) {
     archiveBaseName = 'bundletool'
     archiveClassifier = ''
 
@@ -212,7 +212,7 @@ shadowJar {
 }
 
 // Artifact to use as standalone command line tool.
-task executableJar(type: ShadowJar) {
+tasks.register('executableJar', ShadowJar) {
     archiveBaseName = 'bundletool'
     archiveClassifier = 'all'
     from sourceSets.main.output
